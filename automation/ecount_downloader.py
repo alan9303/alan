@@ -19,7 +19,7 @@ WAREHOUSE_NAME = "송림특판"
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 # 작업용 PC에서는 .env의 DOWNLOAD_DIR로 저장 위치를 지정할 수 있음 (미설정 시 프로젝트 uploads 폴더 사용)
-UPLOAD_DIR = os.environ.get("DOWNLOAD_DIR", os.path.join(BASE_DIR, "uploads"))
+UPLOAD_DIR = os.environ.get("DOWNLOAD_DIR") or os.path.join(BASE_DIR, "uploads")
 
 MONTH_SEL = r"#mainPage > div.header.header-fixed > div.wrapper-header-search > div.tab-content > div:nth-child(1) > ul > li:nth-child(1) > div.form > div:nth-child(2) > div > div.wrapper-datepicker.\{\{style\.contextCss\}\} > button:nth-child(4)"
 YEAR_SEL = r"#mainPage > div.header.header-fixed > div.wrapper-header-search > div.tab-content > div:nth-child(1) > ul > li:nth-child(1) > div.form > div:nth-child(2) > div > div.wrapper-datepicker.\{\{style\.contextCss\}\} > button:nth-child(1)"

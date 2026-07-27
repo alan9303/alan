@@ -20,7 +20,7 @@ WAREHOUSE_NAME = "수태공장"
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 # 작업용 PC에서는 .env의 DOWNLOAD_DIR로 저장 위치를 지정할 수 있음 (미설정 시 프로젝트 uploads 폴더 사용)
-UPLOAD_DIR = os.environ.get("DOWNLOAD_DIR", os.path.join(BASE_DIR, "uploads"))
+UPLOAD_DIR = os.environ.get("DOWNLOAD_DIR") or os.path.join(BASE_DIR, "uploads")
 
 EMP_EXE_PATH = os.environ["EMP_EXE_PATH"]
 EMP_ID = os.environ["EMP_ID"]
