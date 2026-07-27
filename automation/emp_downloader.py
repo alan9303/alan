@@ -12,6 +12,7 @@ import glob
 from datetime import date
 
 import pyautogui
+import pyperclip
 from dotenv import load_dotenv
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -37,6 +38,14 @@ STOCK_STATUS_MENU_ITEM = (1000, 384)
 EXCEL_EXPORT_BTN = (772, 76)
 
 
+def type_text(text):
+    """한글 등 유니코드 텍스트는 pyautogui.typewrite로 입력이 안 되므로 클립보드 붙여넣기로 입력한다."""
+    pyperclip.copy(text)
+    time.sleep(0.2)
+    pyautogui.hotkey("ctrl", "v")
+    time.sleep(0.3)
+
+
 def wait_for_new_file(folder, before_files, timeout=60):
     end_time = time.time() + timeout
     while time.time() < end_time:
@@ -57,11 +66,11 @@ def download_emp_stock_excel():
 
     pyautogui.click(*ID_FIELD)
     pyautogui.hotkey("ctrl", "a")
-    pyautogui.typewrite(EMP_ID, interval=0.03)
+    type_text(EMP_ID)
 
     pyautogui.click(*PW_FIELD)
     pyautogui.hotkey("ctrl", "a")
-    pyautogui.typewrite(EMP_PW, interval=0.03)
+    type_text(EMP_PW)
 
     pyautogui.click(*LOGIN_BTN)
 
@@ -71,9 +80,9 @@ def download_emp_stock_excel():
     time.sleep(20)  # 업데이트 대기
     pyautogui.click(*SELECT_BTN)
 
-    time.sleep(2)
-    pyautogui.click(*MENU_SEARCH_BOX)
-    pyautogui.typewrite("재고", interval=0.05)
+    time.sleep(5)
+    pyautogui.doubleClick(*MENU_SEARCH_BOX)
+    type_text("재고")
     pyautogui.press("enter")
 
     time.sleep(1.5)
@@ -96,7 +105,7 @@ def download_emp_stock_excel():
     before_files = set(glob.glob(os.path.join(UPLOAD_DIR, "*")))
 
     pyautogui.hotkey("ctrl", "a")
-    pyautogui.typewrite(save_path, interval=0.01)
+    type_text(save_path)
     pyautogui.press("enter")
 
     time.sleep(2)

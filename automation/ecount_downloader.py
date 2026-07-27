@@ -11,29 +11,18 @@ from dateutil.relativedelta import relativedelta
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from dotenv import load_dotenv
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
 WAREHOUSE_NAME = "송림특판"
 
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 
-# 작업용 PC에서는 .env의 DOWNLOAD_DIR로 저장 위치를 지정할 수 있음 (미설정 시 프로젝트 uploads 폴더 사용)
-UPLOAD_DIR = os.environ.get("DOWNLOAD_DIR") or os.path.join(BASE_DIR, "uploads")
-
 MONTH_SEL = r"#mainPage > div.header.header-fixed > div.wrapper-header-search > div.tab-content > div:nth-child(1) > ul > li:nth-child(1) > div.form > div:nth-child(2) > div > div.wrapper-datepicker.\{\{style\.contextCss\}\} > button:nth-child(4)"
 YEAR_SEL = r"#mainPage > div.header.header-fixed > div.wrapper-header-search > div.tab-content > div:nth-child(1) > ul > li:nth-child(1) > div.form > div:nth-child(2) > div > div.wrapper-datepicker.\{\{style\.contextCss\}\} > button:nth-child(1)"
-
-
-def find_retry(driver, by, value, tries=2, delay=3):
-    """3초씩 기다리며 최대 (tries+1)번 요소를 찾는다. 실패하면 마지막 예외를 그대로 던짐."""
-    for attempt in range(tries + 1):
-        time.sleep(delay)
-        try:
-            return driver.find_element(by, value)
-        except Exception:
-            if attempt == tries:
-                raise
 
 
 def wait_for_new_file(folder, before_files, timeout=30):
@@ -57,35 +46,42 @@ def download_ecount_stock_excel():
         "download.prompt_for_download": False,
     })
     driver = webdriver.Chrome(options=options)
+    wait = WebDriverWait(driver, 20)
 
     try:
         driver.get("https://login.ecount.com/LOGIN")
-        time.sleep(3)
+        time.sleep(2)
         driver.find_element(By.ID, "com_code").send_keys(os.environ["ECOUNT_COMPANY_CODE"])
         driver.find_element(By.ID, "id").send_keys(os.environ["ECOUNT_ID"])
         driver.find_element(By.ID, "passwd").send_keys(os.environ["ECOUNT_PW"])
         driver.find_element(By.ID, "save").click()
-        time.sleep(5)  # 로그인 처리 대기
+
+        # 대시보드가 뜰 때까지 대기 (팝업이 위에 떠 있어도 이 요소는 이미 렌더링되어 있음)
+        search_box = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "input[placeholder='메뉴검색']")))
 
         # 새로운 기기 로그인 알림 팝업 - 등록을 눌러야 다음 실행부터 팝업이 뜨지 않음
         try:
-            driver.find_element(By.CSS_SELECTOR, "button[data-item-key='regist_footer_toolbar']").click()
+            WebDriverWait(driver, 5).until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, "button[data-item-key='regist_footer_toolbar']"))
+            ).click()
         except Exception:
             pass
 
         # 메뉴검색으로 재고현황 진입
-        search_box = find_retry(driver, By.CSS_SELECTOR, "input[placeholder='메뉴검색']")
+        wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "input[placeholder='메뉴검색']")))
+        search_box = driver.find_element(By.CSS_SELECTOR, "input[placeholder='메뉴검색']")
         search_box.click()
         search_box.send_keys("재고현황")
 
         try:
-            menu_item = find_retry(driver, By.XPATH, "//a[contains(@id, 'MPMU00000100043')]")
+            menu_item = wait.until(EC.element_to_be_clickable((By.XPATH, "//a[contains(@id, 'MPMU00000100043')]")))
             menu_item.click()
         except Exception:
             driver.save_screenshot(os.path.join(BASE_DIR, "debug_menu_search.png"))
             raise
 
-        find_retry(driver, By.CSS_SELECTOR, "#searchGroup")
+        wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "#searchGroup")))
+        time.sleep(2)
 
         # 기준일자를 (오늘 + 1개월)로 변경
         target_date = date.today() + relativedelta(months=1)
