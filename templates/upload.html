@@ -31,8 +31,15 @@
     {% endwith %}
 
     <form method="post" enctype="multipart/form-data">
+        <p><label for="source">출처</label>
+           <select id="source" name="source" required>
+               <option value="">선택하세요</option>
+               {% for key, cfg in sources.items() %}
+                   <option value="{{ key }}">{{ cfg.label }}</option>
+               {% endfor %}
+           </select></p>
         <p><label for="warehouse_name">창고명</label>
-           <input type="text" id="warehouse_name" name="warehouse_name" placeholder="예: 송림특판" required></p>
+           <input type="text" id="warehouse_name" name="warehouse_name" placeholder="예: 송림특판, 수태공장" required></p>
         <p><label for="excel_file">엑셀 파일</label>
            <input type="file" id="excel_file" name="excel_file" accept=".xlsx,.xls" required></p>
         <button type="submit">업로드</button>

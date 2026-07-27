@@ -29,6 +29,31 @@ def require_login():
         )
 
 
+# 엑셀 출처별 컬럼 위치가 서로 달라서 출처마다 파싱 규칙을 따로 둠 (컬럼 인덱스는 0부터 시작)
+SOURCE_CONFIGS = {
+    "ecount": {
+        "label": "이카운트",
+        "skiprows": 2,
+        "item_code_col": 0,
+        "item_name_col": 1,
+        "box_qty_col": 2,
+        "stock_qty_col": 4,
+        "location_col": None,
+        "allowed_locations": None,
+    },
+    "emp": {
+        "label": "EMP",
+        "skiprows": 2,
+        "item_code_col": 2,
+        "item_name_col": 3,
+        "box_qty_col": None,  # EMP 파일에는 박스입수량 컬럼이 없음
+        "stock_qty_col": 13,
+        "location_col": 9,
+        "allowed_locations": {"온라인창고", "제품창고"},
+    },
+}
+
+
 class Item(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     item_code = db.Column(db.String(50), nullable=False)
@@ -121,6 +146,7 @@ def upload():
     if request.method == "POST":
         file = request.files.get("excel_file")
         warehouse_name = request.form.get("warehouse_name", "").strip()
+        source = request.form.get("source", "")
 
         if not file or file.filename == "":
             flash("엑셀 파일을 선택해주세요.")
@@ -128,18 +154,30 @@ def upload():
         if not warehouse_name:
             flash("창고명을 입력해주세요.")
             return redirect(url_for("upload"))
+        config = SOURCE_CONFIGS.get(source)
+        if config is None:
+            flash("출처(이카운트/EMP)를 선택해주세요.")
+            return redirect(url_for("upload"))
 
-        # 1행: 회사명/기준일자 제목, 2행: 헤더, 3행부터 데이터 -> 앞 2행 건너뛰기
-        df = pd.read_excel(file, header=None, skiprows=2)
+        df = pd.read_excel(file, header=None, skiprows=config["skiprows"])
 
         saved_count = 0
         for _, row in df.iterrows():
-            item_code = str(row[0]).strip() if pd.notna(row[0]) else ""
+            item_code = str(row[config["item_code_col"]]).strip() if pd.notna(row[config["item_code_col"]]) else ""
             if not item_code.isdigit():
                 continue  # 합계/출력시각 등 품목이 아닌 요약행 제외 (품목코드는 숫자로만 구성됨)
-            item_name = str(row[1]).strip() if pd.notna(row[1]) else ""
-            box_qty = row[2] if pd.notna(row[2]) else 0
-            stock_qty = row[4] if pd.notna(row[4]) else 0
+
+            if config["location_col"] is not None:
+                location = str(row[config["location_col"]]).strip() if pd.notna(row[config["location_col"]]) else ""
+                if location not in config["allowed_locations"]:
+                    continue
+
+            item_name = str(row[config["item_name_col"]]).strip() if pd.notna(row[config["item_name_col"]]) else ""
+            if config["box_qty_col"] is not None:
+                box_qty = row[config["box_qty_col"]] if pd.notna(row[config["box_qty_col"]]) else 0
+            else:
+                box_qty = 0
+            stock_qty = row[config["stock_qty_col"]] if pd.notna(row[config["stock_qty_col"]]) else 0
 
             item = Item.query.filter_by(item_code=item_code, warehouse_name=warehouse_name).first()
             if item is None:
@@ -151,11 +189,11 @@ def upload():
             saved_count += 1
 
         db.session.commit()
-        flash(f"{saved_count}건 저장 완료 (창고: {warehouse_name})")
+        flash(f"{saved_count}건 저장 완료 (창고: {warehouse_name}, 출처: {config['label']})")
         return redirect(url_for("upload"))
 
     recent_items = Item.query.order_by(Item.id.desc()).limit(20).all()
-    return render_template("upload.html", items=recent_items)
+    return render_template("upload.html", items=recent_items, sources=SOURCE_CONFIGS)
 
 
 if __name__ == "__main__":
