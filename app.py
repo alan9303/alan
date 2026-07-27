@@ -161,7 +161,8 @@ def upload():
 
         df = pd.read_excel(file, header=None, skiprows=config["skiprows"])
 
-        saved_count = 0
+        # 같은 품목코드가 여러 행(창고 위치별 등)으로 나뉘어 있을 수 있으므로 먼저 품목코드별로 합산
+        aggregated = {}
         for _, row in df.iterrows():
             item_code = str(row[config["item_code_col"]]).strip() if pd.notna(row[config["item_code_col"]]) else ""
             if not item_code.isdigit():
@@ -179,17 +180,26 @@ def upload():
                 box_qty = 0
             stock_qty = row[config["stock_qty_col"]] if pd.notna(row[config["stock_qty_col"]]) else 0
 
+            if item_code in aggregated:
+                aggregated[item_code]["stock_qty"] += stock_qty
+            else:
+                aggregated[item_code] = {
+                    "item_name": item_name,
+                    "box_qty": box_qty,
+                    "stock_qty": stock_qty,
+                }
+
+        for item_code, data in aggregated.items():
             item = Item.query.filter_by(item_code=item_code, warehouse_name=warehouse_name).first()
             if item is None:
                 item = Item(item_code=item_code, warehouse_name=warehouse_name)
                 db.session.add(item)
-            item.item_name = item_name
-            item.box_qty = box_qty
-            item.stock_qty = stock_qty
-            saved_count += 1
+            item.item_name = data["item_name"]
+            item.box_qty = data["box_qty"]
+            item.stock_qty = data["stock_qty"]
 
         db.session.commit()
-        flash(f"{saved_count}건 저장 완료 (창고: {warehouse_name}, 출처: {config['label']})")
+        flash(f"{len(aggregated)}건 저장 완료 (창고: {warehouse_name}, 출처: {config['label']})")
         return redirect(url_for("upload"))
 
     recent_items = Item.query.order_by(Item.id.desc()).limit(20).all()
