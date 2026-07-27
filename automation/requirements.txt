@@ -1,0 +1,5 @@
+selenium==4.46.0
+python-dotenv==1.2.2
+python-dateutil==2.9.0.post0
+pyautogui==0.9.54
+pillow==12.3.0

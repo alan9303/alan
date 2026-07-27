@@ -11,7 +11,7 @@ load_dotenv(os.path.join(BASE_DIR, ".env"))
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(BASE_DIR, "instance", "inventory.db")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.secret_key = "dev"  # 개발용 임시 키. 배포 시 환경변수로 교체 필요
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev")
 
 db = SQLAlchemy(app)
 
