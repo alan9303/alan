@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>재고 엑셀 업로드</title>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 40px auto; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #ccc; padding: 6px 10px; text-align: left; }
+        th { background: #f0f0f0; }
+        .flash { background: #eef; padding: 10px; border-radius: 4px; margin-bottom: 10px; }
+        form { margin-bottom: 20px; }
+        label { display: inline-block; width: 90px; }
+        nav a { margin-right: 12px; }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="{{ url_for('search') }}">재고 검색</a>
+        <a href="{{ url_for('upload') }}">엑셀 업로드</a>
+    </nav>
+
+    <h1>재고 엑셀 업로드</h1>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for msg in messages %}
+                <div class="flash">{{ msg }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <form method="post" enctype="multipart/form-data">
+        <p><label for="warehouse_name">창고명</label>
+           <input type="text" id="warehouse_name" name="warehouse_name" placeholder="예: 송림특판" required></p>
+        <p><label for="excel_file">엑셀 파일</label>
+           <input type="file" id="excel_file" name="excel_file" accept=".xlsx,.xls" required></p>
+        <button type="submit">업로드</button>
+    </form>
+
+    <h2>최근 저장된 품목 (최대 20개)</h2>
+    <table>
+        <tr>
+            <th>품목코드</th><th>품목명</th><th>박스입수량</th><th>재고수량</th><th>창고명</th>
+        </tr>
+        {% for item in items %}
+        <tr>
+            <td>{{ item.item_code }}</td>
+            <td>{{ item.item_name }}</td>
+            <td>{{ item.box_qty }}</td>
+            <td>{{ item.stock_qty }}</td>
+            <td>{{ item.warehouse_name }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

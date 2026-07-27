@@ -1,0 +1,14 @@
+venv/
+__pycache__/
+*.pyc
+.env
+instance/*.db
+uploads/*
+!uploads/.gitkeep
+instance/*
+!instance/.gitkeep
+*.xlsx
+*.xls
+debug_*.png
+debug_*.html
+response.html

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>재고 검색</title>
+    <style>
+        body { font-family: sans-serif; max-width: 900px; margin: 40px auto; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #ccc; padding: 6px 10px; text-align: left; }
+        th { background: #f0f0f0; }
+        nav a { margin-right: 12px; }
+        form { margin-bottom: 20px; }
+        input[type="text"] { width: 240px; padding: 4px; }
+        .no-result { color: #888; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="{{ url_for('search') }}">재고 검색</a>
+        <a href="{{ url_for('upload') }}">엑셀 업로드</a>
+    </nav>
+
+    <h1>재고 검색</h1>
+
+    <form method="get">
+        <input type="text" name="q" value="{{ query }}" placeholder="품목코드 또는 품목명 입력">
+        <select name="warehouse">
+            <option value="">전체 창고 (합계)</option>
+            {% for w in warehouses %}
+                <option value="{{ w }}" {% if w == warehouse %}selected{% endif %}>{{ w }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">검색</button>
+    </form>
+
+    {% if query %}
+        {% if results %}
+        <table>
+            <tr>
+                <th>품목코드</th><th>품목명</th><th>박스입수량</th><th>재고수량</th><th>창고명</th>
+            </tr>
+            {% for r in results %}
+            <tr>
+                <td>{{ r.item_code }}</td>
+                <td>{{ r.item_name }}</td>
+                <td>{{ r.box_qty }}</td>
+                <td>{{ r.stock_qty }}</td>
+                <td>{{ r.warehouse_name }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <p class="no-result">"{{ query }}"에 대한 검색 결과가 없습니다.</p>
+        {% endif %}
+    {% endif %}
+</body>
+</html>
