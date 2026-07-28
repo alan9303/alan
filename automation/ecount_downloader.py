@@ -15,6 +15,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from dotenv import load_dotenv
 
+from uploader import upload_to_web
+
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
 WAREHOUSE_NAME = "송림특판"
@@ -56,19 +58,20 @@ def download_ecount_stock_excel():
         driver.find_element(By.ID, "passwd").send_keys(os.environ["ECOUNT_PW"])
         driver.find_element(By.ID, "save").click()
 
-        # 대시보드가 뜰 때까지 대기 (팝업이 위에 떠 있어도 이 요소는 이미 렌더링되어 있음)
-        search_box = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "input[placeholder='메뉴검색']")))
-
-        # 새로운 기기 로그인 알림 팝업 - 등록을 눌러야 다음 실행부터 팝업이 뜨지 않음
+        # 새로운 기기 로그인 알림 팝업이 먼저 뜸 - 등록을 눌러야 다음 실행부터 팝업이 뜨지 않음
         try:
-            WebDriverWait(driver, 5).until(
+            WebDriverWait(driver, 20).until(
                 EC.element_to_be_clickable((By.CSS_SELECTOR, "button[data-item-key='regist_footer_toolbar']"))
             ).click()
         except Exception:
             pass
 
-        # 메뉴검색으로 재고현황 진입
-        wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "input[placeholder='메뉴검색']")))
+        # 팝업 처리 후 대시보드의 메뉴검색 입력창을 기다림
+        try:
+            wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "input[placeholder='메뉴검색']")))
+        except Exception:
+            driver.save_screenshot(os.path.join(BASE_DIR, "debug_after_login.png"))
+            raise
         search_box = driver.find_element(By.CSS_SELECTOR, "input[placeholder='메뉴검색']")
         search_box.click()
         search_box.send_keys("재고현황")
@@ -117,6 +120,9 @@ def download_ecount_stock_excel():
         os.rename(downloaded_path, new_path)
 
         print(f"다운로드 완료: {new_path}")
+
+        upload_to_web(new_path, source="ecount", warehouse_name=WAREHOUSE_NAME)
+
         return new_path
     finally:
         driver.quit()

@@ -15,6 +15,8 @@ import pyautogui
 import pyperclip
 from dotenv import load_dotenv
 
+from uploader import upload_to_web
+
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 WAREHOUSE_NAME = "수태공장"
 
@@ -113,6 +115,9 @@ def download_emp_stock_excel():
 
     downloaded_path = wait_for_new_file(UPLOAD_DIR, before_files)
     print(f"다운로드 완료: {downloaded_path}")
+
+    upload_to_web(downloaded_path, source="emp", warehouse_name=WAREHOUSE_NAME)
+
     return downloaded_path
 
 
