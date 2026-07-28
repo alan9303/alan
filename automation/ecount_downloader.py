@@ -11,6 +11,7 @@ from dateutil.relativedelta import relativedelta
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from dotenv import load_dotenv
@@ -74,14 +75,28 @@ def download_ecount_stock_excel():
             raise
         search_box = driver.find_element(By.CSS_SELECTOR, "input[placeholder='메뉴검색']")
         search_box.click()
+        time.sleep(1)
         search_box.send_keys("재고현황")
+        time.sleep(1)
 
         try:
-            menu_item = wait.until(EC.element_to_be_clickable((By.XPATH, "//a[contains(@id, 'MPMU00000100043')]")))
-            menu_item.click()
+            menu_item = WebDriverWait(driver, 5).until(
+                EC.element_to_be_clickable((By.XPATH, "//a[contains(@id, 'MPMU00000100043')]"))
+            )
         except Exception:
-            driver.save_screenshot(os.path.join(BASE_DIR, "debug_menu_search.png"))
-            raise
+            # 자동완성 목록이 안 뜬 경우 - 검색창을 지우고 한 번 더 시도
+            search_box.send_keys(Keys.CONTROL, "a")
+            search_box.send_keys(Keys.DELETE)
+            time.sleep(1)
+            search_box.send_keys("재고현황")
+            time.sleep(1)
+            try:
+                menu_item = wait.until(EC.element_to_be_clickable((By.XPATH, "//a[contains(@id, 'MPMU00000100043')]")))
+            except Exception:
+                driver.save_screenshot(os.path.join(BASE_DIR, "debug_menu_search.png"))
+                raise
+
+        menu_item.click()
 
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "#searchGroup")))
         time.sleep(2)
