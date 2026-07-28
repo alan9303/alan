@@ -124,9 +124,20 @@ def download_ecount_stock_excel():
         driver.find_element(By.CSS_SELECTOR, "#searchGroup").click()
         time.sleep(4)
 
-        # 엑셀 다운로드
+        # 검색 결과 로딩 중 뜨는 진행 오버레이가 사라질 때까지 대기 (안 사라지면 그냥 넘어감)
+        try:
+            WebDriverWait(driver, 20).until(
+                EC.invisibility_of_element_located((By.CSS_SELECTOR, ".wrapper-page-progress"))
+            )
+        except Exception:
+            pass
+
+        # 엑셀 다운로드 - 버튼이 실제로 클릭 가능해질 때까지 대기
         before_files = set(glob.glob(os.path.join(UPLOAD_DIR, "*")))
-        driver.find_element(By.CSS_SELECTOR, "#outputExcel").click()
+        excel_btn = WebDriverWait(driver, 20).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, "#outputExcel"))
+        )
+        excel_btn.click()
         downloaded_path = wait_for_new_file(UPLOAD_DIR, before_files)
 
         # 창고명 + 날짜로 파일명 정리
