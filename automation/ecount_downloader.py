@@ -6,7 +6,7 @@
 import os
 import time
 import glob
-from datetime import date
+from datetime import date, datetime
 from dateutil.relativedelta import relativedelta
 
 from selenium import webdriver
@@ -44,13 +44,17 @@ def download_ecount_stock_excel():
     os.makedirs(UPLOAD_DIR, exist_ok=True)
 
     options = webdriver.ChromeOptions()
-    options.add_experimental_option("prefs", {
+    prefs = {
         "download.default_directory": UPLOAD_DIR,
         "download.prompt_for_download": False,
-        "safebrowsing.enabled": False,
-        "safebrowsing.disable_download_protection": True,
-    })
+        "download.directory_upgrade": True,
+        "safebrowsing.enabled": True,
+        "profile.default_content_setting_values.automatic_downloads": 1,
+    }
+    options.add_experimental_option("prefs", prefs)
+    options.add_argument("--disable-features=InsecureDownloadWarnings")
     options.add_argument("--safebrowsing-disable-download-protection")
+    options.add_argument("--disable-popup-blocking")
     driver = webdriver.Chrome(options=options)
     wait = WebDriverWait(driver, 20)
 
@@ -140,9 +144,9 @@ def download_ecount_stock_excel():
         excel_btn.click()
         downloaded_path = wait_for_new_file(UPLOAD_DIR, before_files)
 
-        # 창고명 + 날짜로 파일명 정리
+        # 창고명 + 날짜/시간으로 파일명 정리 (매번 고유한 이름이 되도록 시간까지 포함)
         ext = os.path.splitext(downloaded_path)[1]
-        new_name = f"{WAREHOUSE_NAME}_재고현황_{today.strftime('%Y%m%d')}{ext}"
+        new_name = f"{WAREHOUSE_NAME}_재고현황_{datetime.now().strftime('%Y%m%d%H%M')}{ext}"
         new_path = os.path.join(UPLOAD_DIR, new_name)
         if os.path.exists(new_path):
             os.remove(new_path)

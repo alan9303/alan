@@ -9,7 +9,7 @@ EMP는 웹사이트가 아니라 데스크톱 프로그램이라 셀렉터를 �
 import os
 import time
 import glob
-from datetime import date
+from datetime import datetime
 
 import pyautogui
 import pyperclip
@@ -98,8 +98,7 @@ def download_emp_stock_excel():
 
     # 엑셀 저장 대화상자 - 파일명 입력란에 전체 경로를 직접 입력해서 저장 (사람이 타이핑하지 않음, 스크립트가 자동 입력)
     time.sleep(2)
-    today = date.today()
-    save_name = f"{WAREHOUSE_NAME}_재고현황_{today.strftime('%Y%m%d')}.xlsx"
+    save_name = f"{WAREHOUSE_NAME}_재고현황_{datetime.now().strftime('%Y%m%d%H%M')}.xlsx"
     save_path = os.path.join(UPLOAD_DIR, save_name)
     if os.path.exists(save_path):
         os.remove(save_path)
