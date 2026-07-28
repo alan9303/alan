@@ -47,7 +47,10 @@ def download_ecount_stock_excel():
     options.add_experimental_option("prefs", {
         "download.default_directory": UPLOAD_DIR,
         "download.prompt_for_download": False,
+        "safebrowsing.enabled": False,
+        "safebrowsing.disable_download_protection": True,
     })
+    options.add_argument("--safebrowsing-disable-download-protection")
     driver = webdriver.Chrome(options=options)
     wait = WebDriverWait(driver, 20)
 
